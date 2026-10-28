@@ -1,32 +1,26 @@
 /**
- * Core data types. The future admin portal and any database (Firebase / MongoDB)
- * should read and write these exact shapes so the UI never has to change.
+ * Core data types. The database rows (lib/db.ts) are mapped to these shapes,
+ * and the admin portal reads and writes them, so the UI never has to change.
  */
 
 export type ProductTag = "new" | "trending" | "bestseller";
 
-export type CategorySlug =
-  | "t-shirts"
-  | "oversized-tees"
-  | "shirts"
-  | "hoodies"
-  | "jackets"
-  | "jeans"
-  | "cargos"
-  | "trousers"
-  | "joggers"
-  | "shorts"
-  | "co-ords"
-  | "accessories";
+/** URL-safe category id, e.g. "oversized-tees". Categories are managed in the admin. */
+export type CategorySlug = string;
 
 /** Top-level grouping used by the navbar mega menu. */
-export type CategoryGroup = "Topwear" | "Bottomwear" | "More";
+export const CATEGORY_GROUPS = ["Topwear", "Bottomwear", "More"] as const;
+export type CategoryGroup = (typeof CATEGORY_GROUPS)[number];
+
+export const PRODUCT_TAGS: ProductTag[] = ["new", "trending", "bestseller"];
 
 export interface Category {
   slug: CategorySlug;
   name: string;
   group: CategoryGroup;
   description: string;
+  /** Position in menus and category tiles (lowest first) */
+  sortOrder: number;
 }
 
 export interface ProductColor {
@@ -52,10 +46,12 @@ export interface Product {
   fit: string;
   sizes: string[];
   colors: ProductColor[];
-  /** 4-5 image URLs. The first is the main image, the second shows on hover. */
+  /** Image URLs (Vercel Blob). The first is the main image, the second shows on hover. */
   images: string[];
   tags: ProductTag[];
   inStock: boolean;
+  /** Inactive products are hidden from the shop but kept in the admin */
+  active: boolean;
   /** ISO date string, used for "Newest" sorting */
   createdAt: string;
 }

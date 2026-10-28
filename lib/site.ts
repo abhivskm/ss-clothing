@@ -9,6 +9,9 @@ export const siteUrl =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000");
 
+/** "/images/x.jpg" -> "https://site/images/x.jpg"; full URLs (Vercel Blob photos) are returned as they are. */
+export const absoluteUrl = (src: string) => new URL(src, siteUrl).href;
+
 export const site = {
   name: "SS Clothing",
   fullName: "Shree Shyam Garments",

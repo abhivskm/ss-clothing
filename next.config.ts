@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   images: {
     // Required in Next.js 16: the image qualities the optimizer may produce.
     qualities: [75],
-    // When product photos move to Cloudinary (see README), allow that host here:
-    // remotePatterns: [{ protocol: "https", hostname: "res.cloudinary.com" }],
+    // Product photos uploaded from the admin live in Vercel Blob
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
   },
   turbopack: {
     // Pin the project root (a stray package-lock.json on the Desktop confuses root detection)

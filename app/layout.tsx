@@ -1,11 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
-import { Footer } from "@/components/layout/Footer";
-import { Logo } from "@/components/layout/Logo";
-import { Navbar } from "@/components/layout/Navbar";
-import { WhatsAppFloat } from "@/components/layout/WhatsAppFloat";
-import { getCategoriesWithCover } from "@/lib/products";
 import { site, siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -36,23 +30,11 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const categories = await getCategoriesWithCover();
-
+/** Shared by the shop (app/(shop)/layout.tsx adds its navbar and footer) and the admin portal. */
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-IN" className={`${inter.variable} antialiased`}>
-      <body className="flex min-h-dvh flex-col font-sans">
-        <a href="#main" className="sr-only z-50 bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-2 focus:top-2">
-          Skip to content
-        </a>
-        <AnnouncementBar />
-        <Navbar categories={categories} logo={<Logo />} />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <Footer categories={categories} />
-        <WhatsAppFloat />
-      </body>
+    <html lang="en-IN" data-scroll-behavior="smooth" className={`${inter.variable} antialiased`}>
+      <body className="flex min-h-dvh flex-col font-sans">{children}</body>
     </html>
   );
 }

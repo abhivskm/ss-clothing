@@ -1,50 +1,81 @@
 # SS Clothing: Shree Shyam Garments
 
 Product showcase website for **SS Clothing**, a men's wear store at Karond Square, Bhopal.
-Customers browse products and enquire on **WhatsApp** or **Instagram DM**. There is no cart, no payment and no login.
+Customers browse products and enquire on **WhatsApp** or **Instagram DM**. There is no cart, no payment and no customer login.
+The shop owner manages products, photos and categories in the **admin portal** at `/admin`.
 
-Built with Next.js 16 (App Router), TypeScript and Tailwind CSS 4.
+Built with Next.js 16 (App Router), TypeScript and Tailwind CSS 4, on Vercel with a Neon Postgres database and Vercel Blob for photos.
+
+- Live site: https://ss-clothing.vercel.app
+- Admin: https://ss-clothing.vercel.app/admin
 
 ---
 
-## Setup and run
+## Admin portal (for the shop owner)
 
-Requires Node.js 20 or newer.
+Log in at **`/admin`** with the admin password. You stay logged in for 7 days on that device.
+
+| Task | How |
+|---|---|
+| **Add a product** | Products → **Add product**. Fill in the name, category, price, sizes, then **Add photos**. Click **Add product**. |
+| **Edit a product** | Click the product name or **Edit**, change anything, **Save changes**. |
+| **Hide / show a product** | Use the **Active** switch in the products list. Inactive products disappear from the website but stay in the admin. |
+| **Mark sold out** | Edit the product and untick **In stock**. It stays on the site with a "Sold out" label. |
+| **Delete a product** | Edit the product → **Delete product** at the bottom. This also deletes its photos and cannot be undone. |
+| **Photos** | **Add photos** accepts several at once (from phone or computer). The first photo is the main one; drag or use the arrows to reorder; ✕ removes a photo. Portrait (3:4) photos look best. |
+| **Homepage rows** | Tick **New arrival** or **Trending** on a product to show it in those homepage rows. |
+| **Categories** | Categories → add, rename, change menu group (Topwear / Bottomwear / More) or order. A category can only be deleted when it has no products. Categories without active products are hidden from the menu. |
+
+Changes appear on the website immediately. No redeploy is needed.
+
+---
+
+## Setup and run (developers)
+
+Requires Node.js 20 or newer and the Vercel CLI (`npm i -g vercel`).
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build      # production build (also type-checks)
-npm run start      # serve the production build
+vercel link             # once: connect this folder to the ss-clothing Vercel project
+vercel env pull .env.local   # download database, Blob and admin settings
+npm run dev             # http://localhost:3000
+npm run build           # production build (also type-checks)
 npm run lint
+npm run db:setup        # create the database tables (safe to re-run)
 ```
+
+`.env.local` holds secrets and is ignored by git. See `.env.example` for the list of settings.
 
 ## Folder structure
 
 ```
-app/                      Pages (App Router)
-  page.tsx                Home
-  collections/[category]/ /collections/all and /collections/<category>
-  product/[slug]/         Product detail page
-  about/                  About & Visit Us
-  sitemap.ts, robots.ts   SEO
+app/
+  layout.tsx                Root layout (fonts, SEO defaults), shared by shop and admin
+  (shop)/                   Public website: layout with navbar/footer, home, collections, product, about
+  admin/                    Admin portal
+    login/                  Password page
+    (panel)/                Products list, product add/edit, categories
+    actions.ts              Server Actions: login, save/delete products and categories
+  api/admin/upload/         Photo upload to Vercel Blob
+  not-found.tsx, sitemap.ts, robots.ts
 components/
-  layout/                 Announcement bar, navbar + mega menu, mobile menu, search, footer
-  home/                   Hero slider, category tiles, "Why SS Clothing", Instagram section
-  product/                Product card, grid, row, gallery, lightbox, options, enquiry buttons
-  collection/             Filters, sort, collection view
-  ui/                     Buttons, badges, price, skeletons, icons
+  layout/                   Announcement bar, navbar + mega menu, mobile menu, search, footer
+  home/, product/, collection/, ui/   Shop components
+  admin/                    Admin nav, login form, product form, photo manager
 lib/
-  products.ts             DATA LAYER: the only code that reads product data
-  site.ts                 Store settings: phone, WhatsApp, Instagram, address, hours
-  links.ts                WhatsApp / Instagram / Maps link builders + enquiry message
-  format.ts, search.ts    Price formatting, size sorting, search matching
-types/product.ts          Product, Category and Banner types
-data/                     products.ts, categories.ts, banners.ts (sample content)
-public/images/            products/<slug>/1.jpg..5.jpg, banners/
+  products.ts               SHOP DATA LAYER: cached reads for the public site (active products only)
+  admin-products.ts         ADMIN DATA LAYER: all products, writes, photo deletion
+  db.ts                     Neon connection + row → type mapping
+  auth.ts                   Admin password check and signed session cookie
+  site.ts                   Store settings: phone, WhatsApp, Instagram, address, hours
+  links.ts, format.ts, search.ts
+types/product.ts            Product, Category and Banner types
+data/banners.ts             Homepage hero slides (still edited in code)
+scripts/schema.sql          Database tables
+public/images/banners/      Hero slide photos
 ```
 
-## Everyday edits
+## Everyday edits in code
 
 | What | Where |
 |---|---|
@@ -52,102 +83,64 @@ public/images/            products/<slug>/1.jpg..5.jpg, banners/
 | **Store hours** (currently a placeholder) | `lib/site.ts`, set `hours: [{ days: "Mon – Sun", time: "10:30 AM – 9:30 PM" }]` |
 | Announcement bar text | `lib/site.ts`, `announcement` |
 | Hero banner slides | `data/banners.ts` + images in `public/images/banners/` (1920×1000) |
-| About page story | `app/about/page.tsx` (marked PLACEHOLDER) |
+| About page story | `app/(shop)/about/page.tsx` (marked PLACEHOLDER) |
 | Colours and font | `app/globals.css` (`@theme` block) |
 | Logo | `public/logo.png` |
+| Change the admin password | Vercel → Project → Settings → Environment Variables → `ADMIN_PASSWORD`, then redeploy |
 
-### Add a product (until the admin portal exists)
+## Deploying
 
-1. Create a folder `public/images/products/<slug>/` (for example `black-cargo-pants`) and add 4–5 photos named `1.jpg`, `2.jpg`, … .
-   Portrait 3:4 photos work best (for example 1200×1600). Photo 1 is the main image, and photo 2 shows when hovering over the card.
-2. Open `data/products.ts`, copy an existing product and change the fields:
-   - `id`: unique, for example `"ss-022"`
-   - `slug`: same as the folder name, lowercase-with-dashes
-   - `category`: one of the slugs in `data/categories.ts`
-   - `price`, and optionally `mrp` (the discount % is calculated automatically)
-   - `sizes`, `colors` (name + hex colour), `fabric`, `fit`, `description`
-   - `tags`: any of `"new"`, `"trending"`, `"bestseller"` (these drive the homepage rows and badges)
-   - `inStock`: `false` shows "Sold out"
-   - `createdAt`: date like `"2026-11-01"` (used for "Newest" sorting)
-   - `images: photos("<slug>", 5)` (the number of photos in the folder)
-3. To remove a product, delete its entry and its image folder.
+Pushing to the `main` branch on GitHub deploys automatically to Vercel.
 
-### Replace the demo photos
-
-All photos in `public/images` are **free Unsplash demo photos**. Replace them with real store photos before launch:
-keep the same file names (`1.jpg`, `2.jpg`, …) and the site picks them up with no code changes.
-After replacing images in development, delete `.next/dev/cache/images` if old versions still show.
-
-## Deploying to Vercel
-
-1. Push this folder to a GitHub repository.
-2. Import it on [vercel.com](https://vercel.com) and deploy. No settings are needed.
-3. Until you buy a domain, the site uses the Vercel URL automatically for SEO and WhatsApp links.
-4. After buying a domain, add it in Vercel → Domains and set the environment variable
-   `NEXT_PUBLIC_SITE_URL=https://www.your-domain.com` (see `.env.example`), then redeploy.
+After buying a domain, add it in Vercel → Domains and set the environment variable
+`NEXT_PUBLIC_SITE_URL=https://www.your-domain.com`, then redeploy.
 
 ---
 
 ## Architecture
 
-### Data layer
+### Data
 
-All product data goes through **`lib/products.ts`**:
+- **Neon Postgres** (added through the Vercel Marketplace) stores `categories` and `products`
+  (see `scripts/schema.sql`). Sizes, colours, photos and tags are `jsonb` arrays.
+- **Vercel Blob** (public store, Mumbai region) stores product photos. The database keeps their URLs.
+- All Neon and Blob settings come from environment variables that Vercel manages.
 
-```ts
-getAllProducts()            getProductBySlug(slug)      getProductsByCategory(category)
-getProductsByTag(tag)       searchProducts(query)       getRelatedProducts(product)
-getCategories()             getCategory(slug)           getCategoriesWithCover()
-getBanners()
-```
+### Two data layers
 
-- No page or component imports `data/` directly. They only call these functions.
-- Every function is `async`, so swapping the source for a database changes **only this file**.
-- Types live in `types/product.ts`. A database and the admin portal should use the same shapes.
-- Client Components never import `lib/products.ts`, which keeps the data out of the browser bundle.
-  The collection page fetches on the server and passes products down. Search matching (`lib/search.ts`) has no data imports.
+- **`lib/products.ts`** is the only code the public site uses. It loads the whole catalogue in one
+  cached function (`"use cache"` + `cacheTag("catalog")` + `cacheLife("hours")`) and filters in memory,
+  so shop pages are prerendered and fast. It never returns inactive products.
+- **`lib/admin-products.ts`** is used only by the admin. It reads everything (including inactive products),
+  writes to the database, and deletes photos from Blob when they are removed from a product.
+- No page or component queries the database directly, and Client Components never import either file.
 
-### Migrating to a database (Firebase / MongoDB Atlas + Cloudinary)
+### How an admin change reaches the site
 
-1. Create a `products` collection with documents shaped like `Product` (plus `categories` and `banners` if you want them editable).
-2. Rewrite the functions in `lib/products.ts` to query the database. For example, with MongoDB:
-   ```ts
-   import { cacheLife, cacheTag } from "next/cache";
+1. A form in `/admin` calls a Server Action in `app/admin/actions.ts`.
+2. The action checks the login (`requireAdmin()`), validates the input on the server, and writes through `lib/admin-products.ts`.
+3. It calls `updateTag("catalog")`, which expires the shop cache. The next visitor gets fresh pages.
+   New product pages render on their first visit and are cached after that.
 
-   export async function getAllProducts(): Promise<Product[]> {
-     "use cache";
-     cacheLife("hours");
-     cacheTag("products");
-     return db.collection<Product>("products").find().sort({ createdAt: -1 }).toArray();
-   }
-   ```
-   `"use cache"` keeps pages fast (this project has Cache Components enabled), and `cacheTag` lets the admin refresh pages instantly after an edit.
-3. Upload product photos to **Cloudinary** and store the image URLs in `images[]`. Allow the host in `next.config.ts`
-   (`images.remotePatterns`, already stubbed in a comment).
-4. Store credentials in environment variables (`MONGODB_URI`, `CLOUDINARY_*`), never in code.
-5. For products added after a deploy, `generateStaticParams` in `app/product/[slug]/page.tsx` prebuilds the
-   known ones and new slugs render on first visit.
+### Login and security
 
-### Where the admin portal plugs in
+- One password (`ADMIN_PASSWORD`). After login, an `httpOnly` cookie holds an expiry time signed with
+  `SESSION_SECRET` (HMAC-SHA256), valid for 7 days.
+- Every admin page, every Server Action and the upload route check the cookie on the server.
+  Wrong passwords are slowed down to make guessing harder.
+- `/admin` is excluded in `robots.ts` and marked `noindex`.
 
-```
-app/admin/                     ← new, protected route group (add authentication, e.g. Auth.js or Firebase Auth)
-  page.tsx                     product list with edit/delete
-  products/new/page.tsx        create form (with image upload to Cloudinary)
-  products/[id]/page.tsx       edit form
-lib/products.ts                ← add createProduct / updateProduct / deleteProduct next to the readers
-app/admin/actions.ts           ← Server Actions that call those functions, then updateTag("products")
-```
+### Photo uploads
 
-- The public UI does not change: it keeps calling the same read functions.
-- `robots.ts` already disallows `/admin`.
-- Validate form input on the server (for example with zod) against the `Product` type.
+The browser shrinks each photo (max 1600px, JPEG) before uploading it to `/api/admin/upload`, which stores it in
+Blob with a random file name. This keeps uploads small (Vercel limits requests to 4.5 MB) and the site fast.
+Photos uploaded in a form that is then closed without saving stay in Blob unused. They only cost storage
+and can be removed from the Blob dashboard.
 
 ## Placeholders to replace before launch
 
-- [ ] Product photos (Unsplash demo photos in `public/images/products/`)
-- [ ] Product data: names, prices, sizes, colours (`data/products.ts`)
+- [ ] Product photos and details: replace the demo products in the admin
 - [ ] Banner photos and text (`public/images/banners/`, `data/banners.ts`)
 - [ ] Store hours (`lib/site.ts`)
-- [ ] About page story (`app/about/page.tsx`)
+- [ ] About page story (`app/(shop)/about/page.tsx`)
 - [ ] `NEXT_PUBLIC_SITE_URL` once a domain is bought

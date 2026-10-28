@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllProducts, getCategories } from "@/lib/products";
-import { siteUrl } from "@/lib/site";
+import { absoluteUrl, siteUrl } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, categories] = await Promise.all([getAllProducts(), getCategories()]);
@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: p.createdAt,
       changeFrequency: "weekly" as const,
       priority: 0.7,
-      images: [`${siteUrl}${p.images[0]}`],
+      images: [absoluteUrl(p.images[0])],
     })),
   ];
 }

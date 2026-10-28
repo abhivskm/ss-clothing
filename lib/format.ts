@@ -9,11 +9,23 @@ export const discountPercent = (p: Pick<Product, "price" | "mrp">) =>
 
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "Free Size"];
 
-/** Sorts letter sizes first (S..XXL), then waist sizes numerically. */
+/** Sorts letter sizes first (S..XXL), then waist sizes numerically, then anything else. */
 export const compareSizes = (a: string, b: string) => {
-  const rank = (s: string) => (SIZE_ORDER.includes(s) ? SIZE_ORDER.indexOf(s) : 100 + Number(s));
-  return rank(a) - rank(b);
+  const rank = (s: string) => (SIZE_ORDER.includes(s) ? SIZE_ORDER.indexOf(s) : 100 + (Number(s) || 900));
+  return rank(a) - rank(b) || a.localeCompare(b);
 };
+
+/** Size tick boxes offered in the admin product form. */
+export const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "28", "30", "32", "34", "36", "38", "40", "Free Size"];
+
+/** "Oversized Tees & More!" -> "oversized-tees-more" */
+export const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 
 /** Price ranges used by the collection filter. `max` is inclusive. */
 export const PRICE_RANGES = [
