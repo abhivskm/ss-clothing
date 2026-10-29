@@ -7,14 +7,17 @@ import { instagramDmUrl, productEnquiryMessage, whatsappLink } from "@/lib/links
 /**
  * "Enquire on WhatsApp" + "DM on Instagram".
  * The WhatsApp message includes the product, selected size/colour and the page URL.
+ * data-product credits taps to this product in the analytics (components/analytics/Tracker.tsx).
  */
 export function EnquiryButtons({
+  slug,
   name,
   price,
   size,
   color,
   fallbackUrl,
 }: {
+  slug: string;
   name: string;
   price: string;
   size?: string;
@@ -25,7 +28,7 @@ export function EnquiryButtons({
   const href = (url: string) => whatsappLink(productEnquiryMessage({ name, price, size, color, url }));
 
   return (
-    <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr]">
+    <div data-product={slug} className="grid gap-3 sm:grid-cols-[1.4fr_1fr]">
       <a
         href={href(fallbackUrl)}
         onClick={(e) => (e.currentTarget.href = href(window.location.href))}

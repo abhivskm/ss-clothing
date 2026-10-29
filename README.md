@@ -28,6 +28,25 @@ Log in at **`/admin`** with the admin password. You stay logged in for 7 days on
 
 Changes appear on the website immediately. No redeploy is needed.
 
+### Analytics
+
+**Analytics** in the admin shows real visits to the website (nothing is estimated or sample data):
+
+| Item | Meaning |
+|---|---|
+| **Live visitors** | People with the website open on screen in the last 5 minutes. Updates every 5 seconds. |
+| **Total visits** | Visits in the chosen period. A visit ends after 30 minutes without activity. |
+| **Unique visitors** | Different browsers/phones. "New" = first seen in this period, the rest are returning. |
+| **WhatsApp / Call clicks** | Taps on any WhatsApp button or phone link. |
+| **Enquiries** | Stays 0 until an enquiry form is added to the website (see Architecture → Analytics). |
+| **Product analytics** | Views, visits that saw the product ("Seen by"), WhatsApp taps on that product's button, and conversion. |
+
+**Conversion** = visits that viewed the product *and* tapped its WhatsApp button ÷ visits that viewed the product.
+Several views or taps in the same visit count once.
+
+Use **Today / Last 7 days / Last 30 days / Custom** to change the period. "Today" shows visits per hour.
+Your own visits are not counted while you are logged in to the admin on that browser.
+
 ---
 
 ## Setup and run (developers)
@@ -56,20 +75,26 @@ app/
     login/                  Password page
     (panel)/                Products list, product add/edit, categories
     actions.ts              Server Actions: login, save/delete products and categories
+    (panel)/analytics/      Analytics dashboard
   api/admin/upload/         Photo upload to Vercel Blob
+  api/admin/analytics/      Dashboard report + live data (admin only)
+  api/track/                Receives page views, clicks and heartbeats from the website
   not-found.tsx, sitemap.ts, robots.ts
 components/
   layout/                   Announcement bar, navbar + mega menu, mobile menu, search, footer
   home/, product/, collection/, ui/   Shop components
-  admin/                    Admin nav, login form, product form, photo manager
+  admin/                    Admin nav, login form, product form, photo manager, analytics/ dashboard
+  analytics/Tracker.tsx     Visit and click tracking on the public website
 lib/
   products.ts               SHOP DATA LAYER: cached reads for the public site (active products only)
   admin-products.ts         ADMIN DATA LAYER: all products, writes, photo deletion
   db.ts                     Neon connection + row → type mapping
   auth.ts                   Admin password check and signed session cookie
+  analytics.ts              Analytics: validation, recording, reports and live data
   site.ts                   Store settings: phone, WhatsApp, Instagram, address, hours
   links.ts, format.ts, search.ts
 types/product.ts            Product, Category and Banner types
+types/analytics.ts          Analytics event and report types
 data/banners.ts             Homepage hero slides (still edited in code)
 scripts/schema.sql          Database tables
 public/images/banners/      Hero slide photos
@@ -136,6 +161,29 @@ The browser shrinks each photo (max 1600px, JPEG) before uploading it to `/api/a
 Blob with a random file name. This keeps uploads small (Vercel limits requests to 4.5 MB) and the site fast.
 Photos uploaded in a form that is then closed without saving stay in Blob unused. They only cost storage
 and can be removed from the Blob dashboard.
+
+### Analytics
+
+- **Browser** (`components/analytics/Tracker.tsx`, mounted in the shop layout only): keeps a random visitor ID and
+  a visit ID (30-minute inactivity timeout, shared by all tabs) in `localStorage`. It sends a page view on every route
+  change, a product view on `/product/<slug>`, and WhatsApp / call / Instagram link taps caught anywhere on the page.
+  Taps inside an element with `data-product="<slug>"` (the product page's enquiry buttons) are credited to that product.
+  Visible tabs send a heartbeat every 30 s. Events are batched, sent with `sendBeacon` when the page closes, and retried
+  after network errors. Nothing is sent when the browser has Global Privacy Control or Do Not Track switched on.
+- **Server** (`app/api/track` → `lib/analytics.ts`): only accepts same-origin requests, validates every field, limits
+  requests per IP (in memory, best effort), ignores bots and logged-in admins, and writes everything in one transaction.
+  Timestamps come from the database clock. Each event has a browser-made ID with a unique index, so a retried request is
+  never counted twice; double taps within 2 s are ignored in the browser. Enquiries cannot be sent from the browser.
+- **Stored data** (tables `analytics_visitors`, `analytics_sessions`, `analytics_events` in `scripts/schema.sql`):
+  random IDs, page path (no query string), product, referring website (host only), traffic source, device type,
+  browser and OS name, and country (from Vercel). No IP addresses, user-agent strings, names or phone numbers.
+- **Dashboard**: all numbers are calculated in Postgres, grouped into days in `ANALYTICS_TIMEZONE` (default
+  `Asia/Kolkata`). The page polls `/api/admin/analytics/live` every 5 s (paused while the tab is hidden) and refreshes
+  the report every minute when the period includes today. Both APIs return 401 without the admin login.
+  A live visitor is one whose visit had a heartbeat within `ANALYTICS_ACTIVE_MINUTES` (default 5); closed or
+  background tabs drop out after that.
+- **Enquiries**: when an enquiry form is added, call `recordEnquiry()` from `lib/analytics.ts` in its Server Action
+  *after* the enquiry is saved. The Enquiries card and product column then count it.
 
 ## Placeholders to replace before launch
 

@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { Tracker } from "@/components/analytics/Tracker";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Logo } from "@/components/layout/Logo";
@@ -5,7 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { WhatsAppFloat } from "@/components/layout/WhatsAppFloat";
 import { getCategoriesWithCover } from "@/lib/products";
 
-/** Shop navigation, footer and WhatsApp button around every public page. */
+/** Shop navigation, footer, WhatsApp button and visit tracking around every public page. */
 export async function SiteChrome({ children }: { children: React.ReactNode }) {
   const categories = await getCategoriesWithCover();
 
@@ -21,6 +23,10 @@ export async function SiteChrome({ children }: { children: React.ReactNode }) {
       </main>
       <Footer categories={categories} />
       <WhatsAppFloat />
+      {/* Reads the URL, which new product pages only know at request time */}
+      <Suspense fallback={null}>
+        <Tracker />
+      </Suspense>
     </>
   );
 }

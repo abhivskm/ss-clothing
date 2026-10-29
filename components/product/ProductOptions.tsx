@@ -64,7 +64,7 @@ export function ProductOptions({ product, pageUrl }: { product: Product; pageUrl
 
       {!size && sizes.length > 1 && <p className="-mt-3 text-sm text-muted">Pick your size so we can check stock for you.</p>}
 
-      <EnquiryButtons name={product.name} price={formatPrice(product.price)} size={size} color={color} fallbackUrl={pageUrl} />
+      <EnquiryButtons slug={product.slug} name={product.name} price={formatPrice(product.price)} size={size} color={color} fallbackUrl={pageUrl} />
     </div>
   );
 }

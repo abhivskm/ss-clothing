@@ -70,3 +70,15 @@ export const TrashIcon = ({ className = "size-4" }: IconProps) => (
 export const UploadIcon = ({ className = "size-6" }: IconProps) => (
   <svg {...base} className={className}><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4" /></svg>
 );
+export const EyeIcon = ({ className = "size-5" }: IconProps) => (
+  <svg {...base} className={className}><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+);
+export const UsersIcon = ({ className = "size-5" }: IconProps) => (
+  <svg {...base} className={className}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.2A6.5 6.5 0 0 1 21.5 20" /></svg>
+);
+export const MailIcon = ({ className = "size-5" }: IconProps) => (
+  <svg {...base} className={className}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 6.5 8.5 6.5 8.5-6.5" /></svg>
+);
+export const ActivityIcon = ({ className = "size-5" }: IconProps) => (
+  <svg {...base} className={className}><path d="M3 12h4l3-8 4 16 3-8h4" /></svg>
+);
